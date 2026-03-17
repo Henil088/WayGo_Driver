@@ -175,7 +175,6 @@ fun PremiumTripCard(trip: TripHistoryItem) {
 
     if (fullScreenMap) {
         var recenterTrigger by remember { mutableIntStateOf(0) }
-        var showDetails by remember { mutableStateOf(false) }
 
         androidx.compose.ui.window.Dialog(
             onDismissRequest = { fullScreenMap = false },
@@ -237,71 +236,76 @@ fun PremiumTripCard(trip: TripHistoryItem) {
                     ) {
                         Box(modifier = Modifier.width(40.dp).height(4.dp).clip(CircleShape).background(colors.divider).align(Alignment.CenterHorizontally))
                         Spacer(Modifier.height(20.dp))
+                        
+                        // Top Summary (Earning, Time, Status)
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(44.dp)
+                                    .clip(RoundedCornerShape(14.dp))
+                                    .background(if (isCompleted) GreenAccent.copy(alpha = 0.15f) else RedAccent.copy(alpha = 0.15f)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = if (isCompleted) Icons.Default.Check else Icons.Default.Close,
+                                    contentDescription = null,
+                                    tint = if (isCompleted) GreenAccent else RedAccent
+                                )
+                            }
+            
+                            Spacer(Modifier.width(14.dp))
+            
+                            Column(Modifier.weight(1f)) {
+                                Text(trip.date, color = colors.textPrimary, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                                Text(
+                                    trip.status.uppercase(),
+                                    color = if (isCompleted) GreenAccent else RedAccent,
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.ExtraBold,
+                                    letterSpacing = 1.sp
+                                )
+                            }
+            
+                            Column(horizontalAlignment = Alignment.End) {
+                                Text("₹${trip.driverEarnings}", color = YellowPrimary, fontSize = 18.sp, fontWeight = FontWeight.Black)
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(Icons.Default.AccessTime, contentDescription = null, tint = colors.textSecondary, modifier = Modifier.size(10.dp))
+                                    Spacer(Modifier.width(4.dp))
+                                    Text(trip.duration, color = colors.textSecondary, fontSize = 11.sp, fontWeight = FontWeight.Medium)
+                                }
+                            }
+                        }
+
+                        Spacer(Modifier.height(20.dp))
+                        HorizontalDivider(color = colors.background, thickness = 2.dp)
+                        Spacer(Modifier.height(20.dp))
 
                         // Locations
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                 Box(modifier = Modifier.size(14.dp).clip(CircleShape).background(GreenAccent))
-                                Box(modifier = Modifier.width(2.dp).height(30.dp).background(colors.divider))
+                                Box(modifier = Modifier.width(2.dp).height(40.dp).background(colors.divider))
                                 Box(modifier = Modifier.size(14.dp).clip(RoundedCornerShape(3.dp)).background(YellowPrimary))
                             }
                             Spacer(Modifier.width(16.dp))
-                            Column(verticalArrangement = Arrangement.SpaceBetween, modifier = Modifier.height(60.dp)) {
+                            Column(verticalArrangement = Arrangement.SpaceBetween, modifier = Modifier.height(75.dp)) {
                                 Text(trip.startLoc, color = colors.textPrimary, fontSize = 16.sp, fontWeight = FontWeight.Bold, maxLines = 1)
                                 Text(trip.endLoc, color = colors.textPrimary, fontSize = 16.sp, fontWeight = FontWeight.Bold, maxLines = 1)
                             }
                         }
 
-                        Spacer(Modifier.height(16.dp))
-
-                        AnimatedVisibility(visible = showDetails) {
-                            Column(modifier = Modifier.padding(top = 8.dp)) {
-                                Divider(color = colors.divider, thickness = 1.dp)
-                                Spacer(Modifier.height(16.dp))
-                                
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Column {
-                                        Text("Earnings", color = colors.textSecondary, fontSize = 12.sp)
-                                        Text("₹${trip.driverEarnings}", color = YellowPrimary, fontSize = 24.sp, fontWeight = FontWeight.Black)
-                                    }
-                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                        Text("⏱️ Time", color = colors.textSecondary, fontSize = 10.sp, fontWeight = FontWeight.Bold)
-                                        Text(trip.duration, color = colors.textPrimary, fontSize = 13.sp, fontWeight = FontWeight.Bold)
-                                    }
-                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                        Text("🛣️ Dist", color = colors.textSecondary, fontSize = 10.sp, fontWeight = FontWeight.Bold)
-                                        Text(trip.distance, color = colors.textPrimary, fontSize = 13.sp, fontWeight = FontWeight.Bold)
-                                    }
-                                }
-                                Spacer(Modifier.height(16.dp))
-                                Row(
-                                    modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(colors.surfaceElevated).padding(16.dp),
-                                    horizontalArrangement = Arrangement.SpaceBetween
-                                ) {
-                                    Column {
-                                        Text("Date", color = colors.textSecondary, fontSize = 11.sp)
-                                        Text(trip.date, color = colors.textPrimary, fontSize = 14.sp, fontWeight = FontWeight.Bold)
-                                    }
-                                    Column(horizontalAlignment = Alignment.End) {
-                                        Text("Status", color = colors.textSecondary, fontSize = 11.sp)
-                                        Text(trip.status, color = if(trip.status == "Completed") GreenAccent else RedAccent, fontSize = 14.sp, fontWeight = FontWeight.Bold)
-                                    }
-                                }
-                                Spacer(Modifier.height(16.dp))
-                            }
-                        }
+                        Spacer(Modifier.height(24.dp))
 
                         Button(
-                            onClick = { showDetails = !showDetails },
+                            onClick = { fullScreenMap = false },
                             modifier = Modifier.fillMaxWidth().height(52.dp),
                             shape = RoundedCornerShape(16.dp),
                             colors = ButtonDefaults.buttonColors(containerColor = colors.surfaceElevated, contentColor = colors.textPrimary)
                         ) {
-                            Text(if (showDetails) "Hide Details" else "View Trip Details", fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                            Text("Close Map", fontWeight = FontWeight.Bold, fontSize = 15.sp)
                         }
                     }
                 }

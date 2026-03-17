@@ -377,9 +377,18 @@ fun TripRouteMap(
         ]
     """.trimIndent()
 
+    val lightMapStyle = """
+        [
+          {"featureType":"poi","elementType":"labels","stylers":[{"visibility":"off"}]},
+          {"featureType":"transit","stylers":[{"visibility":"off"}]},
+          {"featureType":"road.highway","elementType":"geometry","stylers":[{"color":"#FFE082"}]},
+          {"featureType":"water","elementType":"geometry","stylers":[{"color":"#B3E5FC"}]}
+        ]
+    """.trimIndent()
+
     val mapProperties = remember(colors.isLight) {
         MapProperties(
-            mapStyleOptions = MapStyleOptions(darkMapStyle), // Force dark map to match home style for premium look
+            mapStyleOptions = MapStyleOptions(if (colors.isLight) lightMapStyle else darkMapStyle),
             isMyLocationEnabled = false
         )
     }
