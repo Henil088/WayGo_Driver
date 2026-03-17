@@ -1,0 +1,252 @@
+﻿> Task :app:preBuild UP-TO-DATE
+> Task :app:preDebugBuild UP-TO-DATE
+> Task :app:mergeDebugNativeDebugMetadata NO-SOURCE
+> Task :app:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :app:generateDebugBuildConfig UP-TO-DATE
+> Task :app:checkDebugAarMetadata UP-TO-DATE
+> Task :app:generateDebugResValues UP-TO-DATE
+> Task :app:mapDebugSourceSetPaths UP-TO-DATE
+> Task :app:generateDebugResources UP-TO-DATE
+> Task :app:mergeDebugResources UP-TO-DATE
+> Task :app:packageDebugResources UP-TO-DATE
+> Task :app:parseDebugLocalResources UP-TO-DATE
+> Task :app:createDebugCompatibleScreenManifests UP-TO-DATE
+> Task :app:extractDeepLinksDebug UP-TO-DATE
+> Task :app:processDebugMainManifest UP-TO-DATE
+> Task :app:processDebugManifest UP-TO-DATE
+> Task :app:processDebugManifestForPackage UP-TO-DATE
+> Task :app:processDebugResources UP-TO-DATE
+> Task :app:javaPreCompileDebug UP-TO-DATE
+> Task :app:mergeDebugShaders UP-TO-DATE
+> Task :app:compileDebugShaders NO-SOURCE
+> Task :app:generateDebugAssets UP-TO-DATE
+> Task :app:mergeDebugAssets UP-TO-DATE
+> Task :app:compressDebugAssets UP-TO-DATE
+> Task :app:checkDebugDuplicateClasses UP-TO-DATE
+> Task :app:desugarDebugFileDependencies UP-TO-DATE
+> Task :app:mergeExtDexDebug UP-TO-DATE
+> Task :app:mergeLibDexDebug UP-TO-DATE
+> Task :app:mergeDebugJniLibFolders UP-TO-DATE
+> Task :app:mergeDebugNativeLibs UP-TO-DATE
+> Task :app:stripDebugDebugSymbols UP-TO-DATE
+> Task :app:validateSigningDebug UP-TO-DATE
+> Task :app:writeDebugAppMetadata UP-TO-DATE
+> Task :app:writeDebugSigningConfigVersions UP-TO-DATE
+
+> Task :app:compileDebugKotlin FAILED
+./gradlew : e: file://
+/C:/Users/My%20PC/Stud
+ioProjects/WayGoDriver
+/app/src/main/java/com
+/poojan/waygo_driver/u
+i/home/Homescreen.kt:3
+50:41 Unresolved 
+reference 
+'QuickStatCard'.
+At line:1 char:1
++ ./gradlew 
+assembleDebug > 
+gradle_output.txt 
+2>&1; Get-Content 
+gradle_ ...
++ ~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~
+    + CategoryInfo    
+          : NotSpeci  
+  fied: (e: file://   
+ /C:/U...QuickStat    
+Card'.:String) []    
+, RemoteException
+    + FullyQualifiedE 
+   rrorId : NativeCo  
+  mmandError
+ 
+e: file:///C:/Users/My
+%20PC/StudioProjects/W
+ayGoDriver/app/src/mai
+n/java/com/poojan/wayg
+o_driver/ui/home/Homes
+creen.kt:351:41 
+Unresolved reference 
+'QuickStatCard'.
+e: file:///C:/Users/My
+%20PC/StudioProjects/W
+ayGoDriver/app/src/mai
+n/java/com/poojan/wayg
+o_driver/ui/home/Homes
+creen.kt:352:41 
+Unresolved reference 
+'QuickStatCard'.
+e: file:///C:/Users/My
+%20PC/StudioProjects/W
+ayGoDriver/app/src/mai
+n/java/com/poojan/wayg
+o_driver/ui/home/Homes
+creen.kt:361:29 
+Unresolved reference 
+'ActiveRideCard'.
+e: file:///C:/Users/My
+%20PC/StudioProjects/W
+ayGoDriver/app/src/mai
+n/java/com/poojan/wayg
+o_driver/ui/home/Homes
+creen.kt:376:29 
+Unresolved reference 
+'ActiveRideCard'.
+e: file:///C:/Users/My
+%20PC/StudioProjects/W
+ayGoDriver/app/src/mai
+n/java/com/poojan/wayg
+o_driver/ui/home/Homes
+creen.kt:392:33 
+@Composable 
+invocations can only 
+happen from the 
+context of a 
+@Composable function
+e: file:///C:/Users/My
+%20PC/StudioProjects/W
+ayGoDriver/app/src/mai
+n/java/com/poojan/wayg
+o_driver/ui/home/Homes
+creen.kt:394:33 
+@Composable 
+invocations can only 
+happen from the 
+context of a 
+@Composable function
+e: file:///C:/Users/My
+%20PC/StudioProjects/W
+ayGoDriver/app/src/mai
+n/java/com/poojan/wayg
+o_driver/ui/home/Homes
+creen.kt:395:33 
+@Composable 
+invocations can only 
+happen from the 
+context of a 
+@Composable function
+e: file:///C:/Users/My
+%20PC/StudioProjects/W
+ayGoDriver/app/src/mai
+n/java/com/poojan/wayg
+o_driver/ui/home/Homes
+creen.kt:396:33 
+@Composable 
+invocations can only 
+happen from the 
+context of a 
+@Composable function
+e: file:///C:/Users/My
+%20PC/StudioProjects/W
+ayGoDriver/app/src/mai
+n/java/com/poojan/wayg
+o_driver/ui/home/Homes
+creen.kt:402:46 
+@Composable 
+invocations can only 
+happen from the 
+context of a 
+@Composable function
+e: file:///C:/Users/My
+%20PC/StudioProjects/W
+ayGoDriver/app/src/mai
+n/java/com/poojan/wayg
+o_driver/ui/home/Homes
+creen.kt:405:64 
+@Composable 
+invocations can only 
+happen from the 
+context of a 
+@Composable function
+e: file:///C:/Users/My
+%20PC/StudioProjects/W
+ayGoDriver/app/src/mai
+n/java/com/poojan/wayg
+o_driver/ui/home/Homes
+creen.kt:413:37 
+@Composable 
+invocations can only 
+happen from the 
+context of a 
+@Composable function
+e: file:///C:/Users/My
+%20PC/StudioProjects/W
+ayGoDriver/app/src/mai
+n/java/com/poojan/wayg
+o_driver/ui/home/Homes
+creen.kt:419:29 
+Unresolved reference 
+'ActiveRideCard'.
+e: file:///C:/Users/My
+%20PC/StudioProjects/W
+ayGoDriver/app/src/mai
+n/java/com/poojan/wayg
+o_driver/ui/home/Homes
+creen.kt:433:29 
+Unresolved reference 
+'ActiveRideCard'.
+e: file:///C:/Users/My
+%20PC/StudioProjects/W
+ayGoDriver/app/src/mai
+n/java/com/poojan/wayg
+o_driver/ui/home/Homes
+creen.kt:444:33 
+@Composable 
+invocations can only 
+happen from the 
+context of a 
+@Composable function
+e: file:///C:/Users/My
+%20PC/StudioProjects/W
+ayGoDriver/app/src/mai
+n/java/com/poojan/wayg
+o_driver/ui/home/Homes
+creen.kt:446:33 
+@Composable 
+invocations can only 
+happen from the 
+context of a 
+@Composable function
+e: file:///C:/Users/My
+%20PC/StudioProjects/W
+ayGoDriver/app/src/mai
+n/java/com/poojan/wayg
+o_driver/ui/home/Homes
+creen.kt:631:2 Syntax 
+error: Expecting '}'.
+
+FAILURE: Build failed 
+with an exception.
+
+* What went wrong:
+Execution failed for 
+task ':app:compileDebu
+gKotlin'.
+> A failure occurred 
+while executing org.je
+tbrains.kotlin.compile
+rRunner.GradleCompiler
+RunnerWithWorkers$Grad
+leKotlinCompilerWorkAc
+tion
+   > Compilation 
+error. See log for 
+more details
+
+* Try:
+> Run with 
+--stacktrace option 
+to get the stack 
+trace.
+> Run with --info or 
+--debug option to get 
+more log output.
+> Run with --scan to 
+get full insights.
+> Get more help at htt
+ps://help.gradle.org.
+
+BUILD FAILED in 2s
+29 actionable tasks: 1 executed, 28 up-to-date

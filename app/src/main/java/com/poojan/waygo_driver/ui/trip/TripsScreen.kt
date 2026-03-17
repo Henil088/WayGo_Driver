@@ -174,6 +174,9 @@ fun PremiumTripCard(trip: TripHistoryItem) {
     val glowColor = if (isCompleted) GreenAccent else RedAccent
 
     if (fullScreenMap) {
+        var recenterTrigger by remember { mutableIntStateOf(0) }
+        var showDetails by remember { mutableStateOf(false) }
+
         androidx.compose.ui.window.Dialog(
             onDismissRequest = { fullScreenMap = false },
             properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)
@@ -183,6 +186,7 @@ fun PremiumTripCard(trip: TripHistoryItem) {
                     startLatLng = trip.startLatLng,
                     endLatLng = trip.endLatLng,
                     isFullScreen = true,
+                    recenterTrigger = recenterTrigger,
                     modifier = Modifier.fillMaxSize()
                 )
                 // Close button
@@ -200,36 +204,110 @@ fun PremiumTripCard(trip: TripHistoryItem) {
                     Icon(Icons.Default.Close, tint = colors.textPrimary, contentDescription = "Close Map")
                 }
 
-                // Route overlay details
-                Row(
+                // Bottom Overlay Stack
+                Column(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .align(Alignment.BottomStart)
-                        .background(
-                            Brush.verticalGradient(
-                                colors = listOf(Color.Transparent, colors.surface.copy(alpha = 0.95f), colors.surface)
-                            )
-                        )
-                        .padding(horizontal = 24.dp, vertical = 32.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                        .align(Alignment.BottomCenter)
+                        .fillMaxWidth(),
+                    horizontalAlignment = Alignment.End
                 ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Box(modifier = Modifier.size(14.dp).clip(CircleShape).background(GreenAccent))
-                        Box(modifier = Modifier.width(2.dp).height(30.dp).background(colors.divider))
-                        Box(modifier = Modifier.size(14.dp).clip(RoundedCornerShape(3.dp)).background(YellowPrimary))
-                    }
-                    Spacer(Modifier.width(16.dp))
-                    Column(
-                        verticalArrangement = Arrangement.SpaceBetween,
-                        modifier = Modifier.height(60.dp)
+                    // Recenter Button
+                    Box(
+                        modifier = Modifier
+                            .padding(end = 24.dp, bottom = 16.dp)
+                            .shadow(8.dp, RoundedCornerShape(20.dp))
+                            .clip(RoundedCornerShape(20.dp))
+                            .background(colors.surfaceElevated)
+                            .clickable { recenterTrigger++ }
+                            .padding(horizontal = 16.dp, vertical = 12.dp),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Text(trip.startLoc, color = colors.textPrimary, fontSize = 16.sp, fontWeight = FontWeight.Bold, maxLines = 2)
-                        Text(trip.endLoc, color = colors.textPrimary, fontSize = 16.sp, fontWeight = FontWeight.Bold, maxLines = 2)
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.MyLocation, tint = colors.primary, contentDescription = "Recenter", modifier = Modifier.size(20.dp))
+                        }
+                    }
+
+                    // Bottom Sheet / Details Overlay
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp))
+                            .background(colors.surface)
+                            .padding(top = 16.dp, bottom = 32.dp, start = 24.dp, end = 24.dp)
+                    ) {
+                        Box(modifier = Modifier.width(40.dp).height(4.dp).clip(CircleShape).background(colors.divider).align(Alignment.CenterHorizontally))
+                        Spacer(Modifier.height(20.dp))
+
+                        // Locations
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Box(modifier = Modifier.size(14.dp).clip(CircleShape).background(GreenAccent))
+                                Box(modifier = Modifier.width(2.dp).height(30.dp).background(colors.divider))
+                                Box(modifier = Modifier.size(14.dp).clip(RoundedCornerShape(3.dp)).background(YellowPrimary))
+                            }
+                            Spacer(Modifier.width(16.dp))
+                            Column(verticalArrangement = Arrangement.SpaceBetween, modifier = Modifier.height(60.dp)) {
+                                Text(trip.startLoc, color = colors.textPrimary, fontSize = 16.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+                                Text(trip.endLoc, color = colors.textPrimary, fontSize = 16.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+                            }
+                        }
+
+                        Spacer(Modifier.height(16.dp))
+
+                        AnimatedVisibility(visible = showDetails) {
+                            Column(modifier = Modifier.padding(top = 8.dp)) {
+                                Divider(color = colors.divider, thickness = 1.dp)
+                                Spacer(Modifier.height(16.dp))
+                                
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Column {
+                                        Text("Earnings", color = colors.textSecondary, fontSize = 12.sp)
+                                        Text("₹${trip.driverEarnings}", color = YellowPrimary, fontSize = 24.sp, fontWeight = FontWeight.Black)
+                                    }
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                        Text("⏱️ Time", color = colors.textSecondary, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                        Text(trip.duration, color = colors.textPrimary, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                                    }
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                        Text("🛣️ Dist", color = colors.textSecondary, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                        Text(trip.distance, color = colors.textPrimary, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                                    }
+                                }
+                                Spacer(Modifier.height(16.dp))
+                                Row(
+                                    modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(colors.surfaceElevated).padding(16.dp),
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Column {
+                                        Text("Date", color = colors.textSecondary, fontSize = 11.sp)
+                                        Text(trip.date, color = colors.textPrimary, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                                    }
+                                    Column(horizontalAlignment = Alignment.End) {
+                                        Text("Status", color = colors.textSecondary, fontSize = 11.sp)
+                                        Text(trip.status, color = if(trip.status == "Completed") GreenAccent else RedAccent, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                                    }
+                                }
+                                Spacer(Modifier.height(16.dp))
+                            }
+                        }
+
+                        Button(
+                            onClick = { showDetails = !showDetails },
+                            modifier = Modifier.fillMaxWidth().height(52.dp),
+                            shape = RoundedCornerShape(16.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = colors.surfaceElevated, contentColor = colors.textPrimary)
+                        ) {
+                            Text(if (showDetails) "Hide Details" else "View Trip Details", fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                        }
                     }
                 }
-            }
-        }
-    }
+            } // Close Box
+        } // Close Dialog
+    } // Close if (fullScreenMap)
 
     Card(
         modifier = Modifier

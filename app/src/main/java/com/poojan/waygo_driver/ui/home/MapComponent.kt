@@ -316,6 +316,7 @@ fun TripRouteMap(
     startLatLng: LatLng,
     endLatLng: LatLng,
     isFullScreen: Boolean = false,
+    recenterTrigger: Int = 0,
     modifier: Modifier = Modifier
 ) {
     val colors = LocalWayGoColors.current
@@ -330,6 +331,7 @@ fun TripRouteMap(
 
     var routePoints by remember { mutableStateOf<List<LatLng>?>(null) }
 
+    // Initial Zoom and Route Fetch
     LaunchedEffect(Unit) {
         cameraPositionState.animate(
             CameraUpdateFactory.newLatLngBounds(bounds, 120),
@@ -346,6 +348,16 @@ fun TripRouteMap(
             }
         } catch (e: Exception) {
             e.printStackTrace()
+        }
+    }
+
+    // External Recenter Trigger
+    LaunchedEffect(recenterTrigger) {
+        if (recenterTrigger > 0) {
+            cameraPositionState.animate(
+                CameraUpdateFactory.newLatLngBounds(bounds, 120),
+                durationMs = 800
+            )
         }
     }
 

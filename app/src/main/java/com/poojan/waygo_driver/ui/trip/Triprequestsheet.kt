@@ -14,6 +14,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.text.font.FontWeight
@@ -69,168 +70,153 @@ fun TripRequestSheet(
     val timerColor = if (secondsLeft > 10) YellowPrimary else RedAccent
 
     Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp))
-            .background(colors.surface)
-            .padding(bottom = 32.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+        modifier = Modifier.fillMaxSize(),
+        verticalArrangement = Arrangement.SpaceBetween
     ) {
-        Box(
-            modifier = Modifier
-                .padding(top = 12.dp)
-                .width(36.dp)
-                .height(4.dp)
-                .clip(RoundedCornerShape(2.dp))
-                .background(colors.divider)
-        )
-
-        Spacer(Modifier.height(16.dp))
-
-        // Timer
-        Box(contentAlignment = Alignment.Center) {
-            Box(
-                modifier = Modifier
-                    .size(100.dp * ripple)
-                    .clip(CircleShape)
-                    .background(timerColor.copy(alpha = 0.08f / ripple))
-            )
-            CircularProgressIndicator(
-                progress = { progress },
-                modifier = Modifier.size(80.dp),
-                color = timerColor,
-                strokeWidth = 5.dp,
-                trackColor = colors.surfaceElevated,
-                strokeCap = StrokeCap.Round
-            )
-            Text(
-                text = secondsLeft.toString(),
-                color = timerColor,
-                fontSize = 22.sp,
-                fontWeight = FontWeight.Black
-            )
-        }
-
-        Spacer(Modifier.height(10.dp))
-        Text("NEW TRIP REQUEST", color = colors.textPrimary, fontSize = 13.sp, fontWeight = FontWeight.Bold, letterSpacing = 2.sp)
-        Spacer(Modifier.height(10.dp))
-
-        // Fare Badge
-        Box(
-            modifier = Modifier
-                .scale(fareScale)
-                .clip(RoundedCornerShape(100.dp))
-                .background(YellowPrimary)
-                .padding(horizontal = 24.dp, vertical = 6.dp)
-        ) {
-            Text(fare, color = BgDark, fontSize = 26.sp, fontWeight = FontWeight.Black)
-        }
-
-        Spacer(Modifier.height(16.dp))
-
-        // Route Card
-        Card(
+        // TOP CARD: Timer, Fare, Alert
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp),
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = colors.surfaceElevated)
+                .padding(top = 16.dp, start = 16.dp, end = 16.dp)
+                .shadow(16.dp, RoundedCornerShape(24.dp))
+                .clip(RoundedCornerShape(24.dp))
+                .background(colors.surface.copy(alpha = 0.95f))
+                .padding(20.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                // Pickup
-                Row(verticalAlignment = Alignment.Top) {
-                    Box(
-                        modifier = Modifier
-                            .padding(top = 4.dp)
-                            .size(10.dp)
-                            .clip(CircleShape)
-                            .background(GreenAccent)
-                    )
-                    Spacer(Modifier.width(12.dp))
-                    Column(Modifier.weight(1f)) {
-                        Text("PICKUP", color = GreenAccent, fontSize = 9.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
-                        Text(pickupName, color = colors.textPrimary, fontSize = 13.sp, fontWeight = FontWeight.Bold)
-                        Text(pickupDetail, color = colors.textSecondary, fontSize = 11.sp)
-                    }
-                    Text(pickupDist, color = YellowPrimary, fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Warning text
+                Text("NEW TRIP", color = colors.textPrimary, fontSize = 14.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp)
 
-                Box(
-                    modifier = Modifier
-                        .padding(start = 4.dp, top = 3.dp, bottom = 3.dp)
-                        .width(1.dp)
-                        .height(20.dp)
-                        .background(colors.divider)
-                )
-
-                // Drop
-                Row(verticalAlignment = Alignment.Top) {
-                    Box(
-                        modifier = Modifier
-                            .padding(top = 4.dp)
-                            .size(10.dp)
-                            .clip(RoundedCornerShape(2.dp))
-                            .background(YellowPrimary)
+                // Timer
+                Box(contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(
+                        progress = { progress },
+                        modifier = Modifier.size(44.dp),
+                        color = timerColor,
+                        strokeWidth = 4.dp,
+                        trackColor = colors.surfaceElevated,
+                        strokeCap = StrokeCap.Round
                     )
-                    Spacer(Modifier.width(12.dp))
-                    Column(Modifier.weight(1f)) {
-                        Text("DROP", color = YellowPrimary, fontSize = 9.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
-                        Text(dropName, color = colors.textPrimary, fontSize = 13.sp, fontWeight = FontWeight.Bold)
-                        Text(dropDetail, color = colors.textSecondary, fontSize = 11.sp)
-                    }
-                    Column(horizontalAlignment = Alignment.End) {
-                        Text(tripDist, color = colors.textPrimary, fontSize = 11.sp, fontWeight = FontWeight.ExtraBold)
-                        Text("Est. Trip", color = colors.textSecondary, fontSize = 9.sp)
-                    }
+                    Text(
+                        text = secondsLeft.toString(),
+                        color = timerColor,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Black
+                    )
                 }
+            }
+
+            Spacer(Modifier.height(16.dp))
+
+            // Fare Badge
+            Box(
+                modifier = Modifier
+                    .scale(fareScale)
+                    .clip(RoundedCornerShape(100.dp))
+                    .background(YellowPrimary)
+                    .padding(horizontal = 32.dp, vertical = 8.dp)
+            ) {
+                Text(fare, color = BgDark, fontSize = 32.sp, fontWeight = FontWeight.Black)
+            }
+            Spacer(Modifier.height(12.dp))
+            
+            // Chips
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center
+            ) {
+                TripChip(icon = "💵", label = paymentType)
+                Spacer(Modifier.width(8.dp))
+                TripChip(icon = "🚗", label = rideType)
+                Spacer(Modifier.width(8.dp))
+                TripChip(icon = "⏱️", label = eta)
             }
         }
 
-        Spacer(Modifier.height(12.dp))
-
-        // Chips
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        // BOTTOM CARD: Route & Actions
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .shadow(24.dp, RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp))
+                .clip(RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp))
+                .background(colors.surface.copy(alpha = 0.98f))
+                .padding(horizontal = 20.dp, vertical = 24.dp)
         ) {
-            TripChip(icon = "💵", label = paymentType)
-            TripChip(icon = "🚗", label = rideType)
-            TripChip(icon = "⏱️", label = eta)
-        }
-
-        // Summary Info
-        Text(
-            text = "Total distance includes $pickupDist to pickup",
-            color = colors.textSecondary,
-            fontSize = 10.sp,
-            modifier = Modifier.padding(top = 8.dp)
-        )
-
-        Spacer(Modifier.height(16.dp))
-
-        // Action Buttons
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            OutlinedButton(
-                onClick = onDecline,
-                modifier = Modifier.weight(1f).height(52.dp),
-                shape = RoundedCornerShape(14.dp),
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = colors.textPrimary),
-                border = BorderStroke(1.5.dp, colors.divider)
+            // Route Card
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = colors.surfaceElevated)
             ) {
-                Text("DECLINE", fontWeight = FontWeight.Bold, fontSize = 13.sp, letterSpacing = 0.5.sp)
+                Column(modifier = Modifier.padding(16.dp)) {
+                    // Pickup
+                    Row(verticalAlignment = Alignment.Top) {
+                        Box(modifier = Modifier.padding(top = 4.dp).size(12.dp).clip(CircleShape).background(GreenAccent))
+                        Spacer(Modifier.width(12.dp))
+                        Column(Modifier.weight(1f)) {
+                            Text("PICKUP", color = GreenAccent, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+                            Text(pickupName, color = colors.textPrimary, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                            Text(pickupDetail, color = colors.textSecondary, fontSize = 12.sp)
+                        }
+                        Text(pickupDist, color = YellowPrimary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    }
+
+                    Box(
+                        modifier = Modifier
+                            .padding(start = 5.dp, top = 4.dp, bottom = 4.dp)
+                            .width(2.dp)
+                            .height(24.dp)
+                            .background(colors.divider)
+                    )
+
+                    // Drop
+                    Row(verticalAlignment = Alignment.Top) {
+                        Box(modifier = Modifier.padding(top = 4.dp).size(12.dp).clip(RoundedCornerShape(3.dp)).background(YellowPrimary))
+                        Spacer(Modifier.width(12.dp))
+                        Column(Modifier.weight(1f)) {
+                            Text("DROP", color = YellowPrimary, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+                            Text(dropName, color = colors.textPrimary, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                            Text(dropDetail, color = colors.textSecondary, fontSize = 12.sp)
+                        }
+                        Column(horizontalAlignment = Alignment.End) {
+                            Text(tripDist, color = colors.textPrimary, fontSize = 12.sp, fontWeight = FontWeight.ExtraBold)
+                            Text("Est. Trip", color = colors.textSecondary, fontSize = 10.sp)
+                        }
+                    }
+                }
             }
 
-            Button(
-                onClick = onAccept,
-                modifier = Modifier.weight(1.5f).height(52.dp),
-                shape = RoundedCornerShape(14.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = YellowPrimary, contentColor = BgDark),
-                elevation = ButtonDefaults.buttonElevation(8.dp)
+            Spacer(Modifier.height(12.dp))
+
+            // Action Buttons
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Text("ACCEPT", fontWeight = FontWeight.ExtraBold, fontSize = 13.sp, letterSpacing = 0.5.sp)
+                OutlinedButton(
+                    onClick = onDecline,
+                    modifier = Modifier.weight(1f).height(56.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = colors.textPrimary),
+                    border = BorderStroke(2.dp, colors.divider)
+                ) {
+                    Text("DECLINE", fontWeight = FontWeight.Bold, fontSize = 14.sp, letterSpacing = 0.5.sp)
+                }
+
+                Button(
+                    onClick = onAccept,
+                    modifier = Modifier.weight(1.5f).height(56.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = YellowPrimary, contentColor = BgDark),
+                    elevation = ButtonDefaults.buttonElevation(8.dp)
+                ) {
+                    Text("ACCEPT RIDE", fontWeight = FontWeight.ExtraBold, fontSize = 14.sp, letterSpacing = 0.5.sp)
+                }
             }
         }
     }

@@ -36,6 +36,7 @@ import com.poojan.waygo_driver.ui.theme.*
 import com.poojan.waygo_driver.ui.trip.TripRequestSheet
 import com.poojan.waygo_driver.ui.auth.wayGoTextFieldColors
 import kotlinx.coroutines.delay
+import kotlin.random.Random
 import java.util.Locale
 
 enum class RideState {
@@ -73,21 +74,11 @@ fun HomeScreen(
     var buttonScale     by remember { mutableFloatStateOf(1f) }
     val animatedScale   by animateFloatAsState(buttonScale, spring(Spring.DampingRatioMediumBouncy), label = "btnScale")
 
-    // Earnings count-up
-    var displayEarning by remember { mutableStateOf("₹0") }
-    LaunchedEffect(Unit) {
-        val target = 1240
-        for (i in 0..target step 40) {
-            displayEarning = "₹${String.format(Locale.US, "%,d", i)}"
-            delay(16)
-        }
-        displayEarning = "₹1,240"
-    }
-
     // Mock ride request
     LaunchedEffect(isOnline, rideState) {
         if (isOnline && rideState == RideState.IDLE) {
-            delay(15000) // Changed to 15s to allow user interaction before trip request
+            val randomDelay = Random.nextLong(10000, 16000)
+            delay(randomDelay)
             rideState = RideState.REQUESTED
         }
     }
@@ -215,91 +206,6 @@ fun HomeScreen(
                 }
             }
 
-            // ── Top Bar ──
-            AnimatedVisibility(
-                visible = rideState == RideState.IDLE,
-                enter = slideInVertically { -100 } + fadeIn(),
-                exit = slideOutVertically { -100 } + fadeOut()
-            ) {
-                Column {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .statusBarsPadding()
-                            .padding(horizontal = 16.dp, vertical = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        // Driver Avatar
-                        Box(
-                            modifier = Modifier
-                                .size(48.dp)
-                                .shadow(8.dp, CircleShape)
-                                .clip(CircleShape)
-                                .background(colors.surfaceElevated)
-                                .border(2.dp, YellowPrimary, CircleShape)
-                                .clickable { onProfileClick() },
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text("😊", fontSize = 22.sp)
-                        }
-
-                        Column(
-                            modifier = Modifier
-                                .weight(1f)
-                                .padding(start = 12.dp)
-                        ) {
-                            Text("Good Morning,", color = colors.textSecondary, fontSize = 11.sp)
-                            Text(driverName, color = colors.textPrimary, fontSize = 16.sp, fontWeight = FontWeight.ExtraBold)
-                        }
-
-                        // Notification
-                        Box(
-                            modifier = Modifier
-                                .size(42.dp)
-                                .shadow(4.dp, RoundedCornerShape(12.dp))
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(colors.surface.copy(alpha = 0.95f))
-                                .clickable { onNotificationClick() },
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(Icons.Default.Notifications, null, tint = colors.textPrimary, modifier = Modifier.size(20.dp))
-                            Box(
-                                modifier = Modifier
-                                    .size(8.dp)
-                                    .clip(CircleShape)
-                                    .background(RedAccent)
-                                    .align(Alignment.TopEnd)
-                                    .offset(x = 2.dp, y = (-2).dp)
-                            )
-                        }
-                    }
-
-                    // Earnings Card
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp)
-                            .padding(top = 8.dp),
-                        shape = RoundedCornerShape(20.dp),
-                        colors = CardDefaults.cardColors(containerColor = YellowPrimary),
-                        elevation = CardDefaults.cardElevation(16.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(18.dp),
-                            horizontalArrangement = Arrangement.SpaceEvenly
-                        ) {
-                            EarningItem(label = "Today's Earning", value = displayEarning)
-                            VerticalDivider(Modifier.height(44.dp).padding(vertical = 4.dp), color = BgDark.copy(alpha = 0.15f))
-                            EarningItem(label = "Trips", value = tripCount)
-                            VerticalDivider(Modifier.height(44.dp).padding(vertical = 4.dp), color = BgDark.copy(alpha = 0.15f))
-                            EarningItem(label = "Rating", value = "$rating ★")
-                        }
-                    }
-                }
-            }
-
             // ── Location badge when online ──
             if (isOnline && rideState == RideState.IDLE) {
                 Box(
@@ -324,125 +230,132 @@ fun HomeScreen(
                 }
             }
 
+            // ── Dynamic Location Button Placement ──
+            val bottomSheetHeight = when (rideState) {
+                RideState.IDLE -> 190.dp
+                RideState.REQUESTED -> 16.dp // Push to very bottom if requested since our sheet has its own layout
+                else -> 400.dp
+            }
+
             // ── Bottom Panels ──
             Box(
                 modifier = Modifier.align(Alignment.BottomCenter)
             ) {
-                AnimatedContent(
-                    targetState = rideState,
-                    transitionSpec = {
-                        slideInVertically { it } + fadeIn() togetherWith slideOutVertically { it } + fadeOut()
-                    },
-                    label = "BottomPanel"
-                ) { state ->
-                    when (state) {
-                        RideState.IDLE -> {
-                            // Online/Offline Panel
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clip(RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp))
-                                    .background(colors.surface)
-                                    .padding(top = 12.dp, bottom = 8.dp, start = 20.dp, end = 20.dp),
-                                horizontalAlignment = Alignment.CenterHorizontally
-                            ) {
-                                Box(modifier = Modifier.width(36.dp).height(4.dp).clip(RoundedCornerShape(2.dp)).background(colors.divider))
-                                Spacer(Modifier.height(14.dp))
-
-                                // Status text
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Box(
-                                        modifier = Modifier
-                                            .size(10.dp)
-                                            .clip(CircleShape)
-                                            .background(if (isOnline) GreenAccent else RedAccent)
-                                    )
-                                    Spacer(Modifier.width(8.dp))
-                                    Text(
-                                        text = if (isOnline) "YOU ARE ONLINE" else "YOU ARE OFFLINE",
-                                        color = if (isOnline) GreenAccent else colors.textSecondary,
-                                        fontSize = 12.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        letterSpacing = 1.5.sp
-                                    )
-                                }
-                                Spacer(Modifier.height(14.dp))
-
-                                // Go Online/Offline Button
-                                Box(
+                if (rideState == RideState.REQUESTED) {
+                    TripRequestSheet(
+                        pickupName = "Navrangpura",
+                        pickupDetail = "Near Gujarat University, Ahmedabad",
+                        pickupDist = "2.1 km",
+                        dropName = "Satellite",
+                        dropDetail = "Near Jodhpur Cross Roads, Ahmedabad",
+                        tripDist = tripDistance,
+                        fare = "₹ 185",
+                        eta = "~$tripDuration",
+                        onAccept = { rideState = RideState.EN_ROUTE_PICKUP },
+                        onDecline = { rideState = RideState.IDLE },
+                        onTimeout = { rideState = RideState.IDLE }
+                    )
+                } else {
+                    AnimatedContent(
+                        targetState = rideState,
+                        transitionSpec = {
+                            slideInVertically { it } + fadeIn() togetherWith slideOutVertically { it } + fadeOut()
+                        },
+                        label = "BottomPanel"
+                    ) { state ->
+                        when (state) {
+                            RideState.IDLE -> {
+                                // Online/Offline Panel
+                                Column(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .padding(horizontal = 16.dp),
-                                    contentAlignment = Alignment.Center
+                                        .clip(RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp))
+                                        .background(colors.surface)
+                                        .padding(top = 12.dp, bottom = 8.dp, start = 20.dp, end = 20.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally
                                 ) {
-                                    Button(
-                                        onClick = {
-                                            if (isOnline) {
-                                                isOnline = false
-                                                buttonScale = 0.9f
-                                            } else {
-                                                if (locationPermissionState.status.isGranted) {
-                                                    isOnline = true
-                                                    buttonScale = 0.9f
-                                                } else {
-                                                    locationPermissionState.launchPermissionRequest()
-                                                    Toast.makeText(context, "Location permission required to go online", Toast.LENGTH_SHORT).show()
-                                                }
-                                            }
-                                        },
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .height(58.dp)
-                                            .scale(animatedScale),
-                                        shape = RoundedCornerShape(16.dp),
-                                        colors = ButtonDefaults.buttonColors(
-                                            containerColor = if (isOnline) RedAccent else YellowPrimary,
-                                            contentColor = if (isOnline) Color.White else BgDark
-                                        ),
-                                        elevation = ButtonDefaults.buttonElevation(defaultElevation = 8.dp, pressedElevation = 2.dp)
-                                    ) {
-                                        Icon(
-                                            if (isOnline) Icons.Default.PowerSettingsNew else Icons.Default.PlayArrow,
-                                            null,
-                                            modifier = Modifier.size(24.dp)
+                                    Box(modifier = Modifier.width(36.dp).height(4.dp).clip(RoundedCornerShape(2.dp)).background(colors.divider))
+                                    Spacer(Modifier.height(14.dp))
+                                    // Status text
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(10.dp)
+                                                .clip(CircleShape)
+                                                .background(if (isOnline) GreenAccent else RedAccent)
                                         )
-                                        Spacer(Modifier.width(12.dp))
+                                        Spacer(Modifier.width(8.dp))
                                         Text(
-                                            text = if (isOnline) "GO OFFLINE" else "GO ONLINE",
-                                            fontWeight = FontWeight.Black,
-                                            fontSize = 16.sp,
-                                            letterSpacing = 1.2.sp
+                                            text = if (isOnline) "YOU ARE ONLINE" else "YOU ARE OFFLINE",
+                                            color = if (isOnline) GreenAccent else colors.textSecondary,
+                                            fontSize = 12.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            letterSpacing = 1.5.sp
                                         )
                                     }
-                                }
-                                LaunchedEffect(isOnline) { delay(100); buttonScale = 1f }
-                                Spacer(Modifier.height(20.dp))
+                                    Spacer(Modifier.height(14.dp))
 
-                                // Quick Stats
-                                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    QuickStatCard("⏱️", "3h 20m", "Online", Modifier.weight(1f))
-                                    QuickStatCard("🛣️", "42.5 km", "Driven", Modifier.weight(1f))
-                                    QuickStatCard("✅", "92%", "Acceptance", Modifier.weight(1f))
+                                    // Go Online/Offline Button
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(horizontal = 16.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Button(
+                                            onClick = {
+                                                if (isOnline) {
+                                                    isOnline = false
+                                                    buttonScale = 0.9f
+                                                } else {
+                                                    if (locationPermissionState.status.isGranted) {
+                                                        isOnline = true
+                                                        buttonScale = 0.9f
+                                                    } else {
+                                                        locationPermissionState.launchPermissionRequest()
+                                                        Toast.makeText(context, "Location permission required to go online", Toast.LENGTH_SHORT).show()
+                                                    }
+                                                }
+                                            },
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .height(58.dp)
+                                                .scale(animatedScale),
+                                            shape = RoundedCornerShape(16.dp),
+                                            colors = ButtonDefaults.buttonColors(
+                                                containerColor = if (isOnline) RedAccent else YellowPrimary,
+                                                contentColor = if (isOnline) Color.White else BgDark
+                                            ),
+                                            elevation = ButtonDefaults.buttonElevation(defaultElevation = 8.dp, pressedElevation = 2.dp)
+                                        ) {
+                                            Icon(
+                                                if (isOnline) Icons.Default.PowerSettingsNew else Icons.Default.PlayArrow,
+                                                null,
+                                                modifier = Modifier.size(24.dp)
+                                            )
+                                            Spacer(Modifier.width(12.dp))
+                                            Text(
+                                                text = if (isOnline) "GO OFFLINE" else "GO ONLINE",
+                                                fontWeight = FontWeight.Black,
+                                                fontSize = 16.sp,
+                                                letterSpacing = 1.2.sp
+                                            )
+                                        }
+                                    }
+                                    LaunchedEffect(isOnline) { delay(100); buttonScale = 1f }
+                                    Spacer(Modifier.height(20.dp))
+
+                                    // Quick Stats
+                                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                        QuickStatCard("⏱️", "3h 20m", "Online", Modifier.weight(1f))
+                                        QuickStatCard("🛣️", "42.5 km", "Driven", Modifier.weight(1f))
+                                        QuickStatCard("✅", "92%", "Acceptance", Modifier.weight(1f))
+                                    }
+                                    Spacer(Modifier.height(8.dp))
                                 }
-                                Spacer(Modifier.height(8.dp))
                             }
-                        }
 
-                        RideState.REQUESTED -> {
-                            TripRequestSheet(
-                                pickupName = "Navrangpura",
-                                pickupDetail = "Near Gujarat University, Ahmedabad",
-                                pickupDist = "2.1 km",
-                                dropName = "Satellite",
-                                dropDetail = "Near Jodhpur Cross Roads, Ahmedabad",
-                                tripDist = tripDistance,
-                                fare = "₹ 185",
-                                eta = "~$tripDuration",
-                                onAccept = { rideState = RideState.EN_ROUTE_PICKUP },
-                                onDecline = { rideState = RideState.IDLE },
-                                onTimeout = { rideState = RideState.IDLE }
-                            )
-                        }
+                            RideState.REQUESTED -> {} // Handled above now outside the animation block
 
                         RideState.EN_ROUTE_PICKUP -> {
                             ActiveRideCard(
