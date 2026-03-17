@@ -14,6 +14,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -65,7 +66,7 @@ fun HomeScreen(
     val context = LocalContext.current
 
     var rideState       by remember { mutableStateOf(RideState.IDLE) }
-    var isOnline        by remember { mutableStateOf(false) }
+    var isOnline        by rememberSaveable { mutableStateOf(false) }
     var tripDistance    by remember { mutableStateOf("6.5 km") }
     var tripDuration    by remember { mutableStateOf("18 min") }
     val locationPermissionState = rememberPermissionState(Manifest.permission.ACCESS_FINE_LOCATION)
@@ -86,7 +87,7 @@ fun HomeScreen(
     // Mock ride request
     LaunchedEffect(isOnline, rideState) {
         if (isOnline && rideState == RideState.IDLE) {
-            delay(3000)
+            delay(15000) // Changed to 15s to allow user interaction before trip request
             rideState = RideState.REQUESTED
         }
     }
@@ -368,47 +369,54 @@ fun HomeScreen(
                                 Spacer(Modifier.height(14.dp))
 
                                 // Go Online/Offline Button
-                                Button(
-                                    onClick = {
-                                        if (isOnline) {
-                                            isOnline = false
-                                            buttonScale = 0.9f
-                                        } else {
-                                            if (locationPermissionState.status.isGranted) {
-                                                isOnline = true
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 16.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Button(
+                                        onClick = {
+                                            if (isOnline) {
+                                                isOnline = false
                                                 buttonScale = 0.9f
                                             } else {
-                                                locationPermissionState.launchPermissionRequest()
-                                                Toast.makeText(context, "Location permission required to go online", Toast.LENGTH_SHORT).show()
+                                                if (locationPermissionState.status.isGranted) {
+                                                    isOnline = true
+                                                    buttonScale = 0.9f
+                                                } else {
+                                                    locationPermissionState.launchPermissionRequest()
+                                                    Toast.makeText(context, "Location permission required to go online", Toast.LENGTH_SHORT).show()
+                                                }
                                             }
-                                        }
-                                    },
-                                    modifier = Modifier
-                                        .width(200.dp)
-                                        .height(56.dp)
-                                        .scale(animatedScale),
-                                    shape = RoundedCornerShape(28.dp),
-                                    colors = ButtonDefaults.buttonColors(
-                                        containerColor = if (isOnline) RedAccent else YellowPrimary,
-                                        contentColor = if (isOnline) Color.White else BgDark
-                                    ),
-                                    elevation = ButtonDefaults.buttonElevation(12.dp)
-                                ) {
-                                    Icon(
-                                        if (isOnline) Icons.Default.PowerSettingsNew else Icons.Default.PlayArrow,
-                                        null,
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                    Spacer(Modifier.width(8.dp))
-                                    Text(
-                                        text = if (isOnline) "GO OFFLINE" else "GO ONLINE",
-                                        fontWeight = FontWeight.Black,
-                                        fontSize = 15.sp,
-                                        letterSpacing = 1.sp
-                                    )
+                                        },
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .height(58.dp)
+                                            .scale(animatedScale),
+                                        shape = RoundedCornerShape(16.dp),
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = if (isOnline) RedAccent else YellowPrimary,
+                                            contentColor = if (isOnline) Color.White else BgDark
+                                        ),
+                                        elevation = ButtonDefaults.buttonElevation(defaultElevation = 8.dp, pressedElevation = 2.dp)
+                                    ) {
+                                        Icon(
+                                            if (isOnline) Icons.Default.PowerSettingsNew else Icons.Default.PlayArrow,
+                                            null,
+                                            modifier = Modifier.size(24.dp)
+                                        )
+                                        Spacer(Modifier.width(12.dp))
+                                        Text(
+                                            text = if (isOnline) "GO OFFLINE" else "GO ONLINE",
+                                            fontWeight = FontWeight.Black,
+                                            fontSize = 16.sp,
+                                            letterSpacing = 1.2.sp
+                                        )
+                                    }
                                 }
                                 LaunchedEffect(isOnline) { delay(100); buttonScale = 1f }
-                                Spacer(Modifier.height(16.dp))
+                                Spacer(Modifier.height(20.dp))
 
                                 // Quick Stats
                                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {

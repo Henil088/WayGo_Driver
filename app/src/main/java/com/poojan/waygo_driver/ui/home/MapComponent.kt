@@ -21,6 +21,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.Place
+import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material3.Icon
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.shadow
@@ -309,11 +310,12 @@ fun generateRoutePoints(start: LatLng, end: LatLng): List<LatLng> {
     return points
 }
 
-/** Small static map for trip history cards */
+/** Small static map for trip history cards, with optional fullscreen support */
 @Composable
 fun TripRouteMap(
     startLatLng: LatLng,
     endLatLng: LatLng,
+    isFullScreen: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     val colors = LocalWayGoColors.current
@@ -330,8 +332,8 @@ fun TripRouteMap(
 
     LaunchedEffect(Unit) {
         cameraPositionState.animate(
-            CameraUpdateFactory.newLatLngBounds(bounds, 60),
-            durationMs = 500
+            CameraUpdateFactory.newLatLngBounds(bounds, 120),
+            durationMs = 800
         )
         try {
             val response = NetworkClient.directionsApi.getDirections(
@@ -350,36 +352,36 @@ fun TripRouteMap(
     val darkMapStyle = """
         [
           {"elementType":"geometry","stylers":[{"color":"#12181E"}]},
-          {"elementType":"labels","stylers":[{"visibility":"off"}]},
+          {"elementType":"labels.text.fill","stylers":[{"color":"#8c9fb6"}]},
+          {"elementType":"labels.text.stroke","stylers":[{"color":"#0d1117"}]},
+          {"featureType":"administrative.country","elementType":"geometry.stroke","stylers":[{"color":"#1a2229"}]},
+          {"featureType":"poi","elementType":"geometry","stylers":[{"color":"#1a2229"}]},
+          {"featureType":"poi","elementType":"labels","stylers":[{"visibility":"off"}]},
           {"featureType":"road","elementType":"geometry","stylers":[{"color":"#1a2633"}]},
+          {"featureType":"road","elementType":"geometry.stroke","stylers":[{"color":"#1a2229"}]},
+          {"featureType":"road.highway","elementType":"geometry","stylers":[{"color":"#243040"}]},
+          {"featureType":"transit","stylers":[{"visibility":"off"}]},
           {"featureType":"water","elementType":"geometry","stylers":[{"color":"#0d1117"}]}
-        ]
-    """.trimIndent()
-
-    val lightMapStyle = """
-        [
-          {"elementType":"labels","stylers":[{"visibility":"off"}]},
-          {"featureType":"water","elementType":"geometry","stylers":[{"color":"#B3E5FC"}]}
         ]
     """.trimIndent()
 
     val mapProperties = remember(colors.isLight) {
         MapProperties(
-            mapStyleOptions = MapStyleOptions(if (colors.isLight) lightMapStyle else darkMapStyle),
+            mapStyleOptions = MapStyleOptions(darkMapStyle), // Force dark map to match home style for premium look
             isMyLocationEnabled = false
         )
     }
 
-    val uiSettings = remember {
+    val uiSettings = remember(isFullScreen) {
         MapUiSettings(
             zoomControlsEnabled = false,
             compassEnabled = false,
             myLocationButtonEnabled = false,
             mapToolbarEnabled = false,
-            scrollGesturesEnabled = false,
-            zoomGesturesEnabled = false,
-            tiltGesturesEnabled = false,
-            rotationGesturesEnabled = false
+            scrollGesturesEnabled = isFullScreen,
+            zoomGesturesEnabled = isFullScreen,
+            tiltGesturesEnabled = isFullScreen,
+            rotationGesturesEnabled = isFullScreen
         )
     }
 
@@ -389,29 +391,51 @@ fun TripRouteMap(
         properties = mapProperties,
         uiSettings = uiSettings
     ) {
-        // Start marker
-        Marker(
-            state = MarkerState(position = startLatLng),
-            title = "Pickup"
-        )
-        // End marker
-        Marker(
-            state = MarkerState(position = endLatLng),
-            title = "Drop-off"
-        )
-        // Route
-        if (routePoints != null) {
-            Polyline(
-                points = routePoints!!,
-                color = Color(0xFFFFD600),
-                width = 10f
-            )
+        if (isFullScreen) {
+            MarkerComposable(
+                state = MarkerState(position = startLatLng),
+                title = "Pickup"
+            ) {
+                Box(
+                    modifier = Modifier.size(32.dp).shadow(4.dp, CircleShape).clip(CircleShape).background(Color(0xFF00C853)).border(2.dp, Color.White, CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(Icons.Default.Place, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp))
+                }
+            }
+            MarkerComposable(
+                state = MarkerState(position = endLatLng),
+                title = "Drop-off"
+            ) {
+                Box(
+                    modifier = Modifier.size(32.dp).shadow(4.dp, RoundedCornerShape(8.dp)).clip(RoundedCornerShape(8.dp)).background(Color(0xFFFFB300)).border(2.dp, Color.White, RoundedCornerShape(8.dp)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(Icons.Default.Flag, contentDescription = null, tint = Color.Black, modifier = Modifier.size(20.dp))
+                }
+            }
         } else {
+            Marker(state = MarkerState(position = startLatLng), title = "Pickup")
+            Marker(state = MarkerState(position = endLatLng), title = "Drop-off")
+        }
+
+        routePoints?.let { route ->
+            Polyline(
+                points = route,
+                color = if (colors.isLight) Color(0xFF1E2630) else Color(0xFFFFB300),
+                width = 12f,
+                startCap = RoundCap(),
+                endCap = RoundCap(),
+                jointType = JointType.ROUND
+            )
+        } ?: run {
             val mockRoute = generateRoutePoints(startLatLng, endLatLng)
             Polyline(
                 points = mockRoute,
-                color = Color(0xFFFFD600),
-                width = 10f
+                color = if (colors.isLight) Color(0xFF1E2630) else Color(0xFFFFB300),
+                width = 12f,
+                startCap = RoundCap(),
+                endCap = RoundCap()
             )
         }
     }

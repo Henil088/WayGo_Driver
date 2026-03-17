@@ -182,6 +182,7 @@ fun PremiumTripCard(trip: TripHistoryItem) {
                 TripRouteMap(
                     startLatLng = trip.startLatLng,
                     endLatLng = trip.endLatLng,
+                    isFullScreen = true,
                     modifier = Modifier.fillMaxSize()
                 )
                 // Close button
