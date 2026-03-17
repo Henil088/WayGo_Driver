@@ -14,6 +14,7 @@ import com.poojan.waygo_driver.BuildConfig
 import com.poojan.waygo_driver.network.NetworkClient
 import com.poojan.waygo_driver.ui.theme.LocalWayGoColors
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -45,7 +46,10 @@ fun DriverMapBackground(
     pickupLatLng: LatLng? = null,
     dropLatLng: LatLng? = null,
     showRoute: Boolean = false,
-    onRouteInfoCalculated: (String, String) -> Unit = { _, _ -> }
+    mapPadding: PaddingValues = PaddingValues(0.dp),
+    onRouteInfoCalculated: (String, String) -> Unit = { _, _ -> },
+    onIsFetchingRoute: (Boolean) -> Unit = {},
+    recenterTrigger: Int = 0
 ) {
     val colors = LocalWayGoColors.current
 
@@ -54,6 +58,31 @@ fun DriverMapBackground(
 
     val cameraPositionState = rememberCameraPositionState {
         position = CameraPosition.fromLatLngZoom(AHMEDABAD_CENTER, 13f)
+    }
+
+    // A state to prevent endless looping API requests
+    var lastRequestedPickup by remember { mutableStateOf<LatLng?>(null) }
+    var lastRequestedDrop by remember { mutableStateOf<LatLng?>(null) }
+
+    // Manual Re-center logic when My Location is clicked
+    LaunchedEffect(recenterTrigger) {
+        if (recenterTrigger > 0) {
+            if (showRoute && pickupLatLng != null) {
+                val boundsBuilder = LatLngBounds.builder()
+                    .include(pickupLatLng)
+                    .include(driverLocation)
+                if (dropLatLng != null) boundsBuilder.include(dropLatLng)
+                cameraPositionState.animate(
+                    CameraUpdateFactory.newLatLngBounds(boundsBuilder.build(), 120),
+                    durationMs = 800
+                )
+            } else if (isOnline) {
+                cameraPositionState.animate(
+                    CameraUpdateFactory.newLatLngZoom(driverLocation, 15f),
+                    durationMs = 600
+                )
+            }
+        }
     }
 
     // Animate camera to show route when pickup/drop are set
@@ -71,35 +100,44 @@ fun DriverMapBackground(
                 durationMs = 800
             )
 
-            // Fetch real road routes
-            try {
-                val apiKey = BuildConfig.MAPS_API_KEY
-                
-                // Driver to Pickup
-                val p1 = NetworkClient.directionsApi.getDirections(
-                    origin = "${driverLocation.latitude},${driverLocation.longitude}",
-                    destination = "${pickupLatLng.latitude},${pickupLatLng.longitude}",
-                    apiKey = apiKey
-                )
-                if (p1.routes.isNotEmpty()) {
-                    driverToPickupRoute = PolyUtil.decode(p1.routes[0].overview_polyline.points)
-                }
+            // Cache check to avoid API spamming
+            if (pickupLatLng != lastRequestedPickup || dropLatLng != lastRequestedDrop) {
+                lastRequestedPickup = pickupLatLng
+                lastRequestedDrop = dropLatLng
+                onIsFetchingRoute(true)
 
-                // Pickup to Drop
-                if (dropLatLng != null) {
-                    val p2 = NetworkClient.directionsApi.getDirections(
-                        origin = "${pickupLatLng.latitude},${pickupLatLng.longitude}",
-                        destination = "${dropLatLng.latitude},${dropLatLng.longitude}",
+                // Fetch real road routes
+                try {
+                    val apiKey = BuildConfig.MAPS_API_KEY
+                    
+                    // Driver to Pickup
+                    val p1 = NetworkClient.directionsApi.getDirections(
+                        origin = "${driverLocation.latitude},${driverLocation.longitude}",
+                        destination = "${pickupLatLng.latitude},${pickupLatLng.longitude}",
                         apiKey = apiKey
                     )
-                    if (p2.routes.isNotEmpty()) {
-                        pickupToDropRoute = PolyUtil.decode(p2.routes[0].overview_polyline.points)
-                        val leg = p2.routes[0].legs[0]
-                        onRouteInfoCalculated(leg.distance.text, leg.duration.text)
+                    if (p1.routes.isNotEmpty()) {
+                        driverToPickupRoute = PolyUtil.decode(p1.routes[0].overview_polyline.points)
                     }
+
+                    // Pickup to Drop
+                    if (dropLatLng != null) {
+                        val p2 = NetworkClient.directionsApi.getDirections(
+                            origin = "${pickupLatLng.latitude},${pickupLatLng.longitude}",
+                            destination = "${dropLatLng.latitude},${dropLatLng.longitude}",
+                            apiKey = apiKey
+                        )
+                        if (p2.routes.isNotEmpty()) {
+                            pickupToDropRoute = PolyUtil.decode(p2.routes[0].overview_polyline.points)
+                            val leg = p2.routes[0].legs[0]
+                            onRouteInfoCalculated(leg.distance.text, leg.duration.text)
+                        }
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                } finally {
+                    onIsFetchingRoute(false)
                 }
-            } catch (e: Exception) {
-                e.printStackTrace()
             }
         } else if (isOnline) {
             cameraPositionState.animate(
@@ -108,9 +146,13 @@ fun DriverMapBackground(
             )
             driverToPickupRoute = null
             pickupToDropRoute = null
+            lastRequestedPickup = null
+            lastRequestedDrop = null
         } else {
             driverToPickupRoute = null
             pickupToDropRoute = null
+            lastRequestedPickup = null
+            lastRequestedDrop = null
         }
     }
 
@@ -151,7 +193,7 @@ fun DriverMapBackground(
         MapUiSettings(
             zoomControlsEnabled = false,
             compassEnabled = false,
-            myLocationButtonEnabled = myLocationEnabled,
+            myLocationButtonEnabled = false, // Disabled here so we can build our own floating button securely
             mapToolbarEnabled = false
         )
     }
@@ -163,7 +205,8 @@ fun DriverMapBackground(
             modifier = Modifier.fillMaxSize(),
             cameraPositionState = cameraPositionState,
             properties = mapProperties,
-            uiSettings = uiSettings
+            uiSettings = uiSettings,
+            contentPadding = mapPadding
         ) {
             // Driver location marker (only when online)
             if (isOnline) {

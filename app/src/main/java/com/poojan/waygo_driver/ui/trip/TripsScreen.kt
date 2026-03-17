@@ -16,6 +16,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -168,8 +169,66 @@ fun MiniStatBadge(title: String, value: String, icon: ImageVector) {
 fun PremiumTripCard(trip: TripHistoryItem) {
     val colors = LocalWayGoColors.current
     var expanded by remember { mutableStateOf(false) }
+    var fullScreenMap by remember { mutableStateOf(false) }
     val isCompleted = trip.status == "Completed"
     val glowColor = if (isCompleted) GreenAccent else RedAccent
+
+    if (fullScreenMap) {
+        androidx.compose.ui.window.Dialog(
+            onDismissRequest = { fullScreenMap = false },
+            properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)
+        ) {
+            Box(modifier = Modifier.fillMaxSize().background(colors.background)) {
+                TripRouteMap(
+                    startLatLng = trip.startLatLng,
+                    endLatLng = trip.endLatLng,
+                    modifier = Modifier.fillMaxSize()
+                )
+                // Close button
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(top = 48.dp, end = 24.dp)
+                        .size(48.dp)
+                        .shadow(8.dp, CircleShape)
+                        .clip(CircleShape)
+                        .background(colors.surfaceElevated)
+                        .clickable { fullScreenMap = false },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(Icons.Default.Close, tint = colors.textPrimary, contentDescription = "Close Map")
+                }
+
+                // Route overlay details
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .align(Alignment.BottomStart)
+                        .background(
+                            Brush.verticalGradient(
+                                colors = listOf(Color.Transparent, colors.surface.copy(alpha = 0.95f), colors.surface)
+                            )
+                        )
+                        .padding(horizontal = 24.dp, vertical = 32.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Box(modifier = Modifier.size(14.dp).clip(CircleShape).background(GreenAccent))
+                        Box(modifier = Modifier.width(2.dp).height(30.dp).background(colors.divider))
+                        Box(modifier = Modifier.size(14.dp).clip(RoundedCornerShape(3.dp)).background(YellowPrimary))
+                    }
+                    Spacer(Modifier.width(16.dp))
+                    Column(
+                        verticalArrangement = Arrangement.SpaceBetween,
+                        modifier = Modifier.height(60.dp)
+                    ) {
+                        Text(trip.startLoc, color = colors.textPrimary, fontSize = 16.sp, fontWeight = FontWeight.Bold, maxLines = 2)
+                        Text(trip.endLoc, color = colors.textPrimary, fontSize = 16.sp, fontWeight = FontWeight.Bold, maxLines = 2)
+                    }
+                }
+            }
+        }
+    }
 
     Card(
         modifier = Modifier
@@ -258,6 +317,21 @@ fun PremiumTripCard(trip: TripHistoryItem) {
                         endLatLng = trip.endLatLng,
                         modifier = Modifier.fillMaxSize()
                     )
+
+                    // Expand Map Button
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .padding(12.dp)
+                            .size(36.dp)
+                            .shadow(4.dp, CircleShape)
+                            .clip(CircleShape)
+                            .background(colors.surfaceElevated.copy(alpha = 0.85f))
+                            .clickable { fullScreenMap = true },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(Icons.Default.Fullscreen, tint = colors.textPrimary, contentDescription = "View Full Route", modifier = Modifier.size(20.dp))
+                    }
 
                     // Route overlay
                     Row(

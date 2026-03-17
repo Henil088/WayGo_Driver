@@ -96,6 +96,39 @@ fun HomeScreen(
     val pickupForMap = if (rideState != RideState.IDLE) PICKUP_LOC else null
     val dropForMap = if (rideState == RideState.REQUESTED || rideState == RideState.EN_ROUTE_PICKUP || rideState == RideState.IN_TRIP || rideState == RideState.PAYMENT_COLLECTION) DROP_LOC else null
 
+    // Real device location
+    val fusedLocationClient = remember { com.google.android.gms.location.LocationServices.getFusedLocationProviderClient(context) }
+    var currentDriverLocation by remember { mutableStateOf<LatLng?>(null) }
+    
+    DisposableEffect(isOnline, locationPermissionState.status.isGranted) {
+        if (isOnline && locationPermissionState.status.isGranted) {
+            val locationRequest = com.google.android.gms.location.LocationRequest.Builder(
+                com.google.android.gms.location.Priority.PRIORITY_HIGH_ACCURACY, 10000
+            ).setMinUpdateIntervalMillis(5000).build()
+            
+            val locationCallback = object : com.google.android.gms.location.LocationCallback() {
+                override fun onLocationResult(result: com.google.android.gms.location.LocationResult) {
+                    for (location in result.locations) {
+                        currentDriverLocation = LatLng(location.latitude, location.longitude)
+                    }
+                }
+            }
+            try {
+                fusedLocationClient.requestLocationUpdates(locationRequest, locationCallback, android.os.Looper.getMainLooper())
+            } catch (e: SecurityException) {
+                e.printStackTrace()
+            }
+            onDispose { fusedLocationClient.removeLocationUpdates(locationCallback) }
+        } else {
+            onDispose { }
+        }
+    }
+
+    val actualDriverLoc = currentDriverLocation ?: DRIVER_LOC
+
+    var isFetchingRoute by remember { mutableStateOf(false) }
+    var recenterTrigger by remember { mutableIntStateOf(0) }
+
     Scaffold(
         containerColor = colors.background
     ) { paddingValues ->
@@ -110,15 +143,76 @@ fun HomeScreen(
                 isOnline = isOnline,
                 myLocationEnabled = isOnline && locationPermissionState.status.isGranted,
                 rideState = rideState,
-                driverLocation = DRIVER_LOC,
+                driverLocation = actualDriverLoc,
                 pickupLatLng = pickupForMap,
                 dropLatLng = dropForMap,
                 showRoute = showRoute,
+                mapPadding = if (rideState == RideState.IDLE) PaddingValues(0.dp) else PaddingValues(bottom = 350.dp),
                 onRouteInfoCalculated = { dist, dur ->
                     tripDistance = dist
                     tripDuration = dur
-                }
+                },
+                onIsFetchingRoute = { isFetching ->
+                    isFetchingRoute = isFetching
+                },
+                recenterTrigger = recenterTrigger
             )
+
+            // ── Route Fetching Loader ──
+            AnimatedVisibility(
+                visible = isFetchingRoute && showRoute,
+                enter = fadeIn(),
+                exit = fadeOut(),
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .padding(top = 130.dp) // Below the top bar
+            ) {
+                Row(
+                    modifier = Modifier
+                        .shadow(8.dp, RoundedCornerShape(20.dp))
+                        .clip(RoundedCornerShape(20.dp))
+                        .background(colors.surfaceElevated)
+                        .padding(horizontal = 16.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(16.dp),
+                        strokeWidth = 2.dp,
+                        color = colors.primary
+                    )
+                    Spacer(Modifier.width(12.dp))
+                    Text(
+                        "Calculating best route...",
+                        color = colors.textPrimary,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+
+            // ── Floating My Location Button ──
+            if (isOnline && locationPermissionState.status.isGranted) {
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .padding(bottom = if (rideState == RideState.IDLE) 190.dp else 400.dp, end = 16.dp) // Dynamically adjusts above the bottom sheets
+                        .size(48.dp)
+                        .shadow(6.dp, CircleShape)
+                        .clip(CircleShape)
+                        .background(colors.surface)
+                        .clickable {
+                            recenterTrigger++
+                        },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        Icons.Default.MyLocation,
+                        contentDescription = "My Location",
+                        tint = colors.primary,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+            }
 
             // ── Top Bar ──
             AnimatedVisibility(
