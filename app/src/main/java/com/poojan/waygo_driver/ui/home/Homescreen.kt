@@ -485,6 +485,7 @@ fun HomeScreen(
         }
     }
 }
+}
 
 @Composable
 fun ActiveRideCard(
