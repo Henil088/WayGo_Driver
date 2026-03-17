@@ -139,7 +139,11 @@ fun HomeScreen(
                 pickupLatLng = pickupForMap,
                 dropLatLng = dropForMap,
                 showRoute = showRoute,
-                mapPadding = if (rideState == RideState.IDLE) PaddingValues(0.dp) else PaddingValues(bottom = 350.dp),
+                mapPadding = when (rideState) {
+                    RideState.IDLE -> PaddingValues(0.dp)
+                    RideState.REQUESTED -> PaddingValues(top = 220.dp, bottom = 280.dp)
+                    else -> PaddingValues(bottom = 350.dp)
+                },
                 onRouteInfoCalculated = { dist, dur ->
                     tripDistance = dist
                     tripDuration = dur
