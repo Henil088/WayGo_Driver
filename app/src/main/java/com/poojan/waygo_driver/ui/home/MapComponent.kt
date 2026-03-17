@@ -40,10 +40,12 @@ val AHMEDABAD_BOUNDS = LatLngBounds(
 fun DriverMapBackground(
     isOnline: Boolean = false,
     myLocationEnabled: Boolean = false,
+    rideState: RideState = RideState.IDLE,
     driverLocation: LatLng = AHMEDABAD_CENTER,
     pickupLatLng: LatLng? = null,
     dropLatLng: LatLng? = null,
-    showRoute: Boolean = false
+    showRoute: Boolean = false,
+    onRouteInfoCalculated: (String, String) -> Unit = { _, _ -> }
 ) {
     val colors = LocalWayGoColors.current
 
@@ -56,12 +58,14 @@ fun DriverMapBackground(
 
     // Animate camera to show route when pickup/drop are set
     LaunchedEffect(pickupLatLng, dropLatLng, showRoute) {
-        if (showRoute && pickupLatLng != null && dropLatLng != null) {
-            val bounds = LatLngBounds.builder()
+        if (showRoute && pickupLatLng != null) {
+            val boundsBuilder = LatLngBounds.builder()
                 .include(pickupLatLng)
-                .include(dropLatLng)
                 .include(driverLocation)
-                .build()
+            
+            if (dropLatLng != null) boundsBuilder.include(dropLatLng)
+            
+            val bounds = boundsBuilder.build()
             cameraPositionState.animate(
                 CameraUpdateFactory.newLatLngBounds(bounds, 120),
                 durationMs = 800
@@ -82,13 +86,17 @@ fun DriverMapBackground(
                 }
 
                 // Pickup to Drop
-                val p2 = NetworkClient.directionsApi.getDirections(
-                    origin = "${pickupLatLng.latitude},${pickupLatLng.longitude}",
-                    destination = "${dropLatLng.latitude},${dropLatLng.longitude}",
-                    apiKey = apiKey
-                )
-                if (p2.routes.isNotEmpty()) {
-                    pickupToDropRoute = PolyUtil.decode(p2.routes[0].overview_polyline.points)
+                if (dropLatLng != null) {
+                    val p2 = NetworkClient.directionsApi.getDirections(
+                        origin = "${pickupLatLng.latitude},${pickupLatLng.longitude}",
+                        destination = "${dropLatLng.latitude},${dropLatLng.longitude}",
+                        apiKey = apiKey
+                    )
+                    if (p2.routes.isNotEmpty()) {
+                        pickupToDropRoute = PolyUtil.decode(p2.routes[0].overview_polyline.points)
+                        val leg = p2.routes[0].legs[0]
+                        onRouteInfoCalculated(leg.distance.text, leg.duration.text)
+                    }
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -220,22 +228,24 @@ fun DriverMapBackground(
                 }
             }
 
-            // Route polyline (Pickup to Drop)
+            // Route polyline (Pickup to Drop - The Trip)
             if (showRoute && pickupToDropRoute != null) {
-                Polyline(points = pickupToDropRoute!!, color = Color(0x40FFD600), width = 24f) // shadow
-                Polyline(points = pickupToDropRoute!!, color = Color(0xFFFFD600), width = 14f)
+                val segmentColor = if (rideState == RideState.IN_TRIP || rideState == RideState.REQUESTED) colors.primary else colors.textSecondary.copy(alpha = 0.3f)
+                Polyline(points = pickupToDropRoute!!, color = segmentColor.copy(alpha = 0.2f), width = 24f) // shadow
+                Polyline(points = pickupToDropRoute!!, color = segmentColor, width = 14f, startCap = RoundCap(), endCap = RoundCap())
             } else if (showRoute && pickupLatLng != null && dropLatLng != null) {
                 val routePoints = generateRoutePoints(pickupLatLng, dropLatLng)
-                Polyline(points = routePoints, color = Color(0x40FFD600), width = 24f) // shadow
-                Polyline(points = routePoints, color = Color(0xFFFFD600), width = 14f)
+                Polyline(points = routePoints, color = colors.primary.copy(alpha = 0.2f), width = 24f)
+                Polyline(points = routePoints, color = colors.primary, width = 14f, startCap = RoundCap(), endCap = RoundCap())
             }
 
-            // Driver to pickup route (when en-route)
+            // Driver to pickup route (Navigation part)
             if (showRoute && driverToPickupRoute != null && isOnline) {
-                Polyline(points = driverToPickupRoute!!, color = Color(0xFF00C853), width = 10f)
+                val segmentColor = if (rideState == RideState.EN_ROUTE_PICKUP || rideState == RideState.REQUESTED) Color(0xFF00C853) else Color(0x4000C853)
+                Polyline(points = driverToPickupRoute!!, color = segmentColor, width = 10f, startCap = RoundCap(), endCap = RoundCap())
             } else if (showRoute && pickupLatLng != null && isOnline) {
                 val driverToPickup = generateRoutePoints(driverLocation, pickupLatLng)
-                Polyline(points = driverToPickup, color = Color(0xFF00C853), width = 10f)
+                Polyline(points = driverToPickup, color = Color(0xFF00C853), width = 10f, startCap = RoundCap(), endCap = RoundCap())
             }
         }
     }

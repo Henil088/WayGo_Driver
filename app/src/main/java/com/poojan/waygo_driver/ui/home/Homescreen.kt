@@ -66,6 +66,8 @@ fun HomeScreen(
 
     var rideState       by remember { mutableStateOf(RideState.IDLE) }
     var isOnline        by remember { mutableStateOf(false) }
+    var tripDistance    by remember { mutableStateOf("6.5 km") }
+    var tripDuration    by remember { mutableStateOf("18 min") }
     val locationPermissionState = rememberPermissionState(Manifest.permission.ACCESS_FINE_LOCATION)
     var buttonScale     by remember { mutableFloatStateOf(1f) }
     val animatedScale   by animateFloatAsState(buttonScale, spring(Spring.DampingRatioMediumBouncy), label = "btnScale")
@@ -91,8 +93,8 @@ fun HomeScreen(
 
     // Determine map state
     val showRoute = rideState in listOf(RideState.REQUESTED, RideState.EN_ROUTE_PICKUP, RideState.IN_TRIP, RideState.ARRIVED_PICKUP)
-    val pickupForMap = if (rideState != RideState.IDLE && rideState != RideState.REQUESTED) PICKUP_LOC else null
-    val dropForMap = if (rideState == RideState.IN_TRIP || rideState == RideState.PAYMENT_COLLECTION) DROP_LOC else null
+    val pickupForMap = if (rideState != RideState.IDLE) PICKUP_LOC else null
+    val dropForMap = if (rideState == RideState.REQUESTED || rideState == RideState.EN_ROUTE_PICKUP || rideState == RideState.IN_TRIP || rideState == RideState.PAYMENT_COLLECTION) DROP_LOC else null
 
     Scaffold(
         containerColor = colors.background
@@ -107,10 +109,15 @@ fun HomeScreen(
             DriverMapBackground(
                 isOnline = isOnline,
                 myLocationEnabled = isOnline && locationPermissionState.status.isGranted,
+                rideState = rideState,
                 driverLocation = DRIVER_LOC,
                 pickupLatLng = pickupForMap,
                 dropLatLng = dropForMap,
-                showRoute = showRoute
+                showRoute = showRoute,
+                onRouteInfoCalculated = { dist, dur ->
+                    tripDistance = dist
+                    tripDuration = dur
+                }
             )
 
             // ── Top Bar ──
@@ -326,9 +333,9 @@ fun HomeScreen(
                                 pickupDist = "2.1 km",
                                 dropName = "Satellite",
                                 dropDetail = "Near Jodhpur Cross Roads, Ahmedabad",
-                                tripDist = "6.5 km",
+                                tripDist = tripDistance,
                                 fare = "₹ 185",
-                                eta = "~18 min",
+                                eta = "~$tripDuration",
                                 onAccept = { rideState = RideState.EN_ROUTE_PICKUP },
                                 onDecline = { rideState = RideState.IDLE },
                                 onTimeout = { rideState = RideState.IDLE }

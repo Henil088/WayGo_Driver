@@ -178,7 +178,10 @@ fun TripRequestSheet(
                         Text(dropName, color = colors.textPrimary, fontSize = 13.sp, fontWeight = FontWeight.Bold)
                         Text(dropDetail, color = colors.textSecondary, fontSize = 11.sp)
                     }
-                    Text(tripDist, color = colors.textSecondary, fontSize = 11.sp)
+                    Column(horizontalAlignment = Alignment.End) {
+                        Text(tripDist, color = colors.textPrimary, fontSize = 11.sp, fontWeight = FontWeight.ExtraBold)
+                        Text("Est. Trip", color = colors.textSecondary, fontSize = 9.sp)
+                    }
                 }
             }
         }
@@ -194,6 +197,14 @@ fun TripRequestSheet(
             TripChip(icon = "🚗", label = rideType)
             TripChip(icon = "⏱️", label = eta)
         }
+
+        // Summary Info
+        Text(
+            text = "Total distance includes $pickupDist to pickup",
+            color = colors.textSecondary,
+            fontSize = 10.sp,
+            modifier = Modifier.padding(top = 8.dp)
+        )
 
         Spacer(Modifier.height(16.dp))
 
