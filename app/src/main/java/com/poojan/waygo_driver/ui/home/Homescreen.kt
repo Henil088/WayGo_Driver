@@ -7,6 +7,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import android.Manifest
+import android.widget.Toast
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.*
@@ -19,6 +21,10 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.isGranted
+import com.google.accompanist.permissions.rememberPermissionState
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -45,6 +51,7 @@ val DRIVER_LOC = LatLng(23.0225, 72.5714)       // Ahmedabad center
 val PICKUP_LOC = LatLng(23.0350, 72.5560)        // Navrangpura
 val DROP_LOC   = LatLng(23.0120, 72.5100)        // Satellite
 
+@OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun HomeScreen(
     driverName: String      = "Ravi Kumar",
@@ -55,9 +62,11 @@ fun HomeScreen(
     onNotificationClick: () -> Unit = {}
 ) {
     val colors = LocalWayGoColors.current
+    val context = LocalContext.current
 
     var rideState       by remember { mutableStateOf(RideState.IDLE) }
     var isOnline        by remember { mutableStateOf(false) }
+    val locationPermissionState = rememberPermissionState(Manifest.permission.ACCESS_FINE_LOCATION)
     var buttonScale     by remember { mutableFloatStateOf(1f) }
     val animatedScale   by animateFloatAsState(buttonScale, spring(Spring.DampingRatioMediumBouncy), label = "btnScale")
 
@@ -81,7 +90,7 @@ fun HomeScreen(
     }
 
     // Determine map state
-    val showRoute = rideState in listOf(RideState.EN_ROUTE_PICKUP, RideState.IN_TRIP, RideState.ARRIVED_PICKUP)
+    val showRoute = rideState in listOf(RideState.REQUESTED, RideState.EN_ROUTE_PICKUP, RideState.IN_TRIP, RideState.ARRIVED_PICKUP)
     val pickupForMap = if (rideState != RideState.IDLE && rideState != RideState.REQUESTED) PICKUP_LOC else null
     val dropForMap = if (rideState == RideState.IN_TRIP || rideState == RideState.PAYMENT_COLLECTION) DROP_LOC else null
 
@@ -97,6 +106,7 @@ fun HomeScreen(
             // ── Map Background ──
             DriverMapBackground(
                 isOnline = isOnline,
+                myLocationEnabled = isOnline && locationPermissionState.status.isGranted,
                 driverLocation = DRIVER_LOC,
                 pickupLatLng = pickupForMap,
                 dropLatLng = dropForMap,
@@ -259,8 +269,18 @@ fun HomeScreen(
                                 // Go Online/Offline Button
                                 Button(
                                     onClick = {
-                                        isOnline = !isOnline
-                                        buttonScale = 0.9f
+                                        if (isOnline) {
+                                            isOnline = false
+                                            buttonScale = 0.9f
+                                        } else {
+                                            if (locationPermissionState.status.isGranted) {
+                                                isOnline = true
+                                                buttonScale = 0.9f
+                                            } else {
+                                                locationPermissionState.launchPermissionRequest()
+                                                Toast.makeText(context, "Location permission required to go online", Toast.LENGTH_SHORT).show()
+                                            }
+                                        }
                                     },
                                     modifier = Modifier
                                         .width(200.dp)

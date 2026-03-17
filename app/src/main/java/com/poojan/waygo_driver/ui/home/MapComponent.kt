@@ -9,7 +9,23 @@ import androidx.compose.ui.graphics.Color
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.*
 import com.google.maps.android.compose.*
+import com.google.maps.android.PolyUtil
+import com.poojan.waygo_driver.BuildConfig
+import com.poojan.waygo_driver.network.NetworkClient
 import com.poojan.waygo_driver.ui.theme.LocalWayGoColors
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.DirectionsCar
+import androidx.compose.material.icons.filled.Place
+import androidx.compose.material3.Icon
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.shadow
+import androidx.compose.foundation.border
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.unit.dp
 
 // Ahmedabad center
 val AHMEDABAD_CENTER = LatLng(23.0225, 72.5714)
@@ -23,12 +39,16 @@ val AHMEDABAD_BOUNDS = LatLngBounds(
 @Composable
 fun DriverMapBackground(
     isOnline: Boolean = false,
+    myLocationEnabled: Boolean = false,
     driverLocation: LatLng = AHMEDABAD_CENTER,
     pickupLatLng: LatLng? = null,
     dropLatLng: LatLng? = null,
     showRoute: Boolean = false
 ) {
     val colors = LocalWayGoColors.current
+
+    var driverToPickupRoute by remember { mutableStateOf<List<LatLng>?>(null) }
+    var pickupToDropRoute by remember { mutableStateOf<List<LatLng>?>(null) }
 
     val cameraPositionState = rememberCameraPositionState {
         position = CameraPosition.fromLatLngZoom(AHMEDABAD_CENTER, 13f)
@@ -46,11 +66,43 @@ fun DriverMapBackground(
                 CameraUpdateFactory.newLatLngBounds(bounds, 120),
                 durationMs = 800
             )
+
+            // Fetch real road routes
+            try {
+                val apiKey = BuildConfig.MAPS_API_KEY
+                
+                // Driver to Pickup
+                val p1 = NetworkClient.directionsApi.getDirections(
+                    origin = "${driverLocation.latitude},${driverLocation.longitude}",
+                    destination = "${pickupLatLng.latitude},${pickupLatLng.longitude}",
+                    apiKey = apiKey
+                )
+                if (p1.routes.isNotEmpty()) {
+                    driverToPickupRoute = PolyUtil.decode(p1.routes[0].overview_polyline.points)
+                }
+
+                // Pickup to Drop
+                val p2 = NetworkClient.directionsApi.getDirections(
+                    origin = "${pickupLatLng.latitude},${pickupLatLng.longitude}",
+                    destination = "${dropLatLng.latitude},${dropLatLng.longitude}",
+                    apiKey = apiKey
+                )
+                if (p2.routes.isNotEmpty()) {
+                    pickupToDropRoute = PolyUtil.decode(p2.routes[0].overview_polyline.points)
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
         } else if (isOnline) {
             cameraPositionState.animate(
                 CameraUpdateFactory.newLatLngZoom(driverLocation, 15f),
                 durationMs = 600
             )
+            driverToPickupRoute = null
+            pickupToDropRoute = null
+        } else {
+            driverToPickupRoute = null
+            pickupToDropRoute = null
         }
     }
 
@@ -79,19 +131,19 @@ fun DriverMapBackground(
         ]
     """.trimIndent()
 
-    val mapProperties = remember(colors.isLight) {
+    val mapProperties = remember(colors.isLight, myLocationEnabled) {
         MapProperties(
             mapStyleOptions = MapStyleOptions(if (colors.isLight) lightMapStyle else darkMapStyle),
-            isMyLocationEnabled = false,
+            isMyLocationEnabled = myLocationEnabled,
             latLngBoundsForCameraTarget = AHMEDABAD_BOUNDS
         )
     }
 
-    val uiSettings = remember {
+    val uiSettings = remember(myLocationEnabled) {
         MapUiSettings(
             zoomControlsEnabled = false,
             compassEnabled = false,
-            myLocationButtonEnabled = false,
+            myLocationButtonEnabled = myLocationEnabled,
             mapToolbarEnabled = false
         )
     }
@@ -107,56 +159,83 @@ fun DriverMapBackground(
         ) {
             // Driver location marker (only when online)
             if (isOnline) {
-                Marker(
+                MarkerComposable(
                     state = MarkerState(position = driverLocation),
                     title = "You",
-                    snippet = "Your current location"
-                )
+                    onClick = { true }
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(36.dp)
+                            .shadow(4.dp, CircleShape)
+                            .clip(CircleShape)
+                            .background(Color.White)
+                            .border(2.dp, colors.primary, CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(Icons.Default.DirectionsCar, contentDescription = null, tint = colors.primary, modifier = Modifier.size(24.dp))
+                    }
+                }
             }
 
             // Pickup marker
             if (pickupLatLng != null) {
-                Marker(
+                MarkerComposable(
                     state = MarkerState(position = pickupLatLng),
                     title = "Pickup",
-                    snippet = "Pickup location"
-                )
+                    onClick = { true }
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(32.dp)
+                            .shadow(4.dp, CircleShape)
+                            .clip(CircleShape)
+                            .background(Color(0xFF00C853))
+                            .border(2.dp, Color.White, CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(Icons.Default.Place, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp))
+                    }
+                }
             }
 
             // Drop marker
             if (dropLatLng != null) {
-                Marker(
+                MarkerComposable(
                     state = MarkerState(position = dropLatLng),
                     title = "Drop-off",
-                    snippet = "Drop-off location"
-                )
+                    onClick = { true }
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(32.dp)
+                            .shadow(4.dp, CircleShape)
+                            .clip(CircleShape)
+                            .background(Color(0xFFFFD600))
+                            .border(2.dp, Color.White, CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(Icons.Default.Place, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp))
+                    }
+                }
             }
 
-            // Route polyline
-            if (showRoute && pickupLatLng != null && dropLatLng != null) {
-                // Create smooth route points between pickup and drop
+            // Route polyline (Pickup to Drop)
+            if (showRoute && pickupToDropRoute != null) {
+                Polyline(points = pickupToDropRoute!!, color = Color(0x40FFD600), width = 24f) // shadow
+                Polyline(points = pickupToDropRoute!!, color = Color(0xFFFFD600), width = 14f)
+            } else if (showRoute && pickupLatLng != null && dropLatLng != null) {
                 val routePoints = generateRoutePoints(pickupLatLng, dropLatLng)
-                Polyline(
-                    points = routePoints,
-                    color = Color(0xFFFFD600),
-                    width = 14f
-                )
-                // Route shadow
-                Polyline(
-                    points = routePoints,
-                    color = Color(0x40FFD600),
-                    width = 24f
-                )
+                Polyline(points = routePoints, color = Color(0x40FFD600), width = 24f) // shadow
+                Polyline(points = routePoints, color = Color(0xFFFFD600), width = 14f)
             }
 
             // Driver to pickup route (when en-route)
-            if (showRoute && pickupLatLng != null && isOnline) {
+            if (showRoute && driverToPickupRoute != null && isOnline) {
+                Polyline(points = driverToPickupRoute!!, color = Color(0xFF00C853), width = 10f)
+            } else if (showRoute && pickupLatLng != null && isOnline) {
                 val driverToPickup = generateRoutePoints(driverLocation, pickupLatLng)
-                Polyline(
-                    points = driverToPickup,
-                    color = Color(0xFF00C853),
-                    width = 10f
-                )
+                Polyline(points = driverToPickup, color = Color(0xFF00C853), width = 10f)
             }
         }
     }
@@ -194,11 +273,25 @@ fun TripRouteMap(
         position = CameraPosition.fromLatLngZoom(bounds.center, 13f)
     }
 
+    var routePoints by remember { mutableStateOf<List<LatLng>?>(null) }
+
     LaunchedEffect(Unit) {
         cameraPositionState.animate(
             CameraUpdateFactory.newLatLngBounds(bounds, 60),
             durationMs = 500
         )
+        try {
+            val response = NetworkClient.directionsApi.getDirections(
+                origin = "${startLatLng.latitude},${startLatLng.longitude}",
+                destination = "${endLatLng.latitude},${endLatLng.longitude}",
+                apiKey = BuildConfig.MAPS_API_KEY
+            )
+            if (response.routes.isNotEmpty()) {
+                routePoints = PolyUtil.decode(response.routes[0].overview_polyline.points)
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
     val darkMapStyle = """
@@ -254,11 +347,19 @@ fun TripRouteMap(
             title = "Drop-off"
         )
         // Route
-        val routePoints = generateRoutePoints(startLatLng, endLatLng)
-        Polyline(
-            points = routePoints,
-            color = Color(0xFFFFD600),
-            width = 10f
-        )
+        if (routePoints != null) {
+            Polyline(
+                points = routePoints!!,
+                color = Color(0xFFFFD600),
+                width = 10f
+            )
+        } else {
+            val mockRoute = generateRoutePoints(startLatLng, endLatLng)
+            Polyline(
+                points = mockRoute,
+                color = Color(0xFFFFD600),
+                width = 10f
+            )
+        }
     }
 }
